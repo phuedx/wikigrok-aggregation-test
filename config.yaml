@@ -1,0 +1,4 @@
+number_of_responses: 10
+percent_agreement: 80
+max_claims: -1  # maximum number of claims to push to Wikidata, -1 means not limited
+offset: 0  # push claims starting from this number
