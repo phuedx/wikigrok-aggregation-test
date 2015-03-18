@@ -7,6 +7,7 @@ import os
 import yaml
 
 from core import pwb, pywikibot
+import wikigrok.claim
 
 
 class Aggregator():
@@ -21,37 +22,30 @@ class Aggregator():
             self.config.update(yaml.load(config_file))
 
     def aggregate(self):
-        raw_claims = open('claims.tsv', 'r')
-        claims = csv.DictReader(raw_claims, delimiter='\t')
+        raw_events = open('claims.tsv', 'r')
+        events = csv.DictReader(open('claims.tsv', 'r'), delimiter='\t')
         aggregated_claims = OrderedDict()
         cutoff_time = strptime('2014-12-12', '%Y-%m-%d')
 
-        for claim in claims:
+        for event in events:
+            claim = wikigrok.claim.from_event(event)
+
             # we don't need claims before 2014-12-12
-            if cutoff_time > strptime(claim['timestamp'], '%Y%m%d%H%M%S'):
+            if cutoff_time > claim.timestamp:
                 continue
-            hash_ = hashlib.md5()
-            hash_.update(claim['event_pageId'].encode('utf-8'))
-            hash_.update(claim['event_propertyId'].encode('utf-8'))
-            hash_.update(claim['event_subjectId'].encode('utf-8'))
-            hash_.update(claim['event_valueId'].encode('utf-8'))
-            key = hash_.hexdigest()
 
-            if key not in aggregated_claims:
-                aggregated_claims[key] = {}
-                aggregated_claims[key]['claim'] = claim
-                aggregated_claims[key]['votes'] = 0
-                aggregated_claims[key]['positive_votes'] = 0
+            group_id = claim.get_group_id()
 
-            aggregated_claims[key]['votes'] += 1
+            if group_id not in aggregated_claims:
+                aggregated_claims[group_id] = {}
+                aggregated_claims[group_id]['claim'] = claim
+                aggregated_claims[group_id]['votes'] = 0
+                aggregated_claims[group_id]['positive_votes'] = 0
 
-            if claim['event_response'] == 'NULL':
-                claim['event_response'] = 0
+            aggregated_claims[group_id]['votes'] += 1
 
-            is_positive_vote = bool(int(claim['event_response']))
-
-            if is_positive_vote:
-                aggregated_claims[key]['positive_votes'] += 1
+            if claim.is_positive:
+                aggregated_claims[group_id]['positive_votes'] += 1
 
         for key, aggregated_claim in aggregated_claims.items():
             if aggregated_claim['votes'] >= self.config['number_of_responses'] and\
@@ -75,9 +69,9 @@ class Aggregator():
         album_id = 'Q482994'  # album
 
         for claim in self.claims[self.config['offset']:max_claims]:
-            subject_id = claim['claim']['event_subjectId']
-            property_id = claim['claim']['event_propertyId']
-            value_id = claim['claim']['event_valueId']
+            subject_id = claim['claim'].subject_id
+            property_id = claim['claim'].property_id
+            value_id = claim['claim'].value_id
 
             item = pywikibot.ItemPage(repo, subject_id)
             item.get()
@@ -114,4 +108,3 @@ if __name__ == '__main__':
     a = Aggregator()
     a.aggregate()
     a.push()
-
