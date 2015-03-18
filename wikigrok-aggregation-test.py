@@ -107,7 +107,7 @@ class Aggregator():
                     # item.addClaim(new_claim)
                     pushed_claims += 1
 
-        print('# of qualified claims: %d' % len(self.claims))
+        print('# of qualified claims: %d' % (max_claims - self.config['offset']))
         print('# of pushed claims: %d' % pushed_claims)
 
 if __name__ == '__main__':
