@@ -6,7 +6,7 @@ import os
 
 import yaml
 
-from core import pwb, pywikibot
+import pywikibot
 import wikigrok.claim
 
 
