@@ -4,7 +4,7 @@ import time
 
 class Claim:
     def __init__(self, page_id, property_id, subject_id, value_id, is_positive,
-                       timestamp):
+                 timestamp):
         self.page_id = page_id
         self.property_id = property_id
         self.subject_id = subject_id
@@ -14,7 +14,7 @@ class Claim:
         self._group_id = None
 
     def get_group_id(self):
-        if self._group_id == None:
+        if self._group_id is None:
             hash_ = hashlib.md5()
             hash_.update(self.page_id.encode('utf-8'))
             hash_.update(self.property_id.encode('utf-8'))

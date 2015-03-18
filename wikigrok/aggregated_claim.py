@@ -10,7 +10,8 @@ class AggregatedClaim:
         self.value_id = value_id
         self.num_votes = num_votes
         self.num_positive_votes = num_positive_votes
-        self.percent_positive_votes = float(num_positive_votes) / num_votes * 100
+        self.percent_positive_votes =\
+            float(num_positive_votes) / num_votes * 100
 
 
 def from_claims(claims):
