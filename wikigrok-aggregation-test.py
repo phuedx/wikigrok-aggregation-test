@@ -100,8 +100,8 @@ class Aggregator():
 
                 if property_id not in item.claims or value_id not in claim_items:
                     new_claim = pywikibot.Claim(
-                        site, claim['claim']['event_propertyId'], datatype='wikibase-item')
-                    new_claim_item = pywikibot.ItemPage(repo, claim['claim']['event_valueId'])
+                        site, property_id, datatype='wikibase-item')
+                    new_claim_item = pywikibot.ItemPage(repo, value_id)
                     new_claim.setTarget(new_claim_item)
                     # TODO: enable the next line if you want to push data to wikidata
                     # item.addClaim(new_claim)
