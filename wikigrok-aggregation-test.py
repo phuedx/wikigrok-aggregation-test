@@ -8,6 +8,8 @@ import yaml
 
 import pywikibot
 import wikigrok.claim
+import wikigrok.aggregated_claim
+from pipe import *
 
 
 class Aggregator():
@@ -21,41 +23,29 @@ class Aggregator():
         with open(config_path) as config_file:
             self.config.update(yaml.load(config_file))
 
-    def aggregate(self):
+    def _get_claims(self):
         raw_events = open('claims.tsv', 'r')
-        events = csv.DictReader(open('claims.tsv', 'r'), delimiter='\t')
-        aggregated_claims = OrderedDict()
-        cutoff_time = strptime('2014-12-12', '%Y-%m-%d')
+        events = csv.DictReader(raw_events, delimiter='\t')
 
         for event in events:
-            claim = wikigrok.claim.from_event(event)
+            yield wikigrok.claim.from_event(event)
 
-            # we don't need claims before 2014-12-12
-            if cutoff_time > claim.timestamp:
-                continue
+    def aggregate(self):
 
-            group_id = claim.get_group_id()
+        # Claims submitted before 2014-12-12 were test claims.
+        # FIXME: Why not filter out events where event_testing is truthy?
+        start_time = strptime('2014-12-12', '%Y-%m-%d')
 
-            if group_id not in aggregated_claims:
-                aggregated_claims[group_id] = {}
-                aggregated_claims[group_id]['claim'] = claim
-                aggregated_claims[group_id]['votes'] = 0
-                aggregated_claims[group_id]['positive_votes'] = 0
+        grouped_claims = self._get_claims()\
+               | where(lambda c: c.timestamp > start_time)\
+               | groupby(lambda c: c.get_group_id())
 
-            aggregated_claims[group_id]['votes'] += 1
+        aggregated_claims = grouped_claims\
+               | select(lambda (_, claims): wikigrok.aggregated_claim.from_claims(claims))\
+               | where(lambda g: g.num_votes >= self.config['number_of_responses'])\
+               | where(lambda g: g.percent_positive_votes >= self.config['percent_agreement'])
 
-            if claim.is_positive:
-                aggregated_claims[group_id]['positive_votes'] += 1
-
-        for key, aggregated_claim in aggregated_claims.items():
-            if aggregated_claim['votes'] >= self.config['number_of_responses'] and\
-                    float(aggregated_claim['positive_votes']) / aggregated_claim['votes'] >=\
-                    float(self.config['percent_agreement']) / 100:
-                self.claims.append(aggregated_claim)
-                # print('-' * 10)
-                # print('CLAIM: ' + str(aggregated_claim['claim']))
-                # print('VOTES: ' + str(aggregated_claim['votes']))
-                # print('POSITIVE_VOTES: ' + str(aggregated_claim['positive_votes']))
+        self.claims = aggregated_claims | as_list
 
     def push(self):
         pushed_claims = 0
@@ -69,9 +59,9 @@ class Aggregator():
         album_id = 'Q482994'  # album
 
         for claim in self.claims[self.config['offset']:max_claims]:
-            subject_id = claim['claim'].subject_id
-            property_id = claim['claim'].property_id
-            value_id = claim['claim'].value_id
+            subject_id = claim.subject_id
+            property_id = claim.property_id
+            value_id = claim.value_id
 
             item = pywikibot.ItemPage(repo, subject_id)
             item.get()

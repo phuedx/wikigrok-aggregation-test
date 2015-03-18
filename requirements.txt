@@ -1,5 +1,6 @@
 httplib2==0.9
 ipaddress==1.0.7
 mwparserfromhell==0.3.3
+pipe==1.4.1
 pywikibot==2.0b3
 PyYAML==3.11
