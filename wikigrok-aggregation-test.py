@@ -30,22 +30,41 @@ class Aggregator():
         for event in events:
             yield wikigrok.claim.from_event(event)
 
+    def _choose_claim_for_subject(self, claims):
+        sorted_claims = claims | sort(key=lambda c: c.num_votes) | as_list
+        num_claims = sorted_claims | count
+        candidate_claim = sorted_claims | first
+
+        # We're only ever testing the claim with the highest number of votes.
+
+        if num_claims == 1:
+            return candidate_claim
+
+        total_votes = sorted_claims | select(lambda c: c.num_votes) | add
+        percentage_votes = float(candidate_claim.num_votes) / total_votes * 100
+
+        if percentage_votes >= self.config['percent_agreement']:
+            return candidate_claim
+
+        return None
+
     def aggregate(self):
 
         # Claims submitted before 2014-12-12 were test claims.
         # FIXME: Why not filter out events where event_testing is truthy?
         start_time = strptime('2014-12-12', '%Y-%m-%d')
 
-        grouped_claims = self._get_claims()\
+        aggregated_claims = self._get_claims()\
                | where(lambda c: c.timestamp > start_time)\
-               | groupby(lambda c: c.get_group_id())
-
-        aggregated_claims = grouped_claims\
+               | groupby(lambda c: c.get_group_id())\
                | select(lambda (_, claims): wikigrok.aggregated_claim.from_claims(claims))\
-               | where(lambda g: g.num_votes >= self.config['number_of_responses'])\
-               | where(lambda g: g.percent_positive_votes >= self.config['percent_agreement'])
+               | where(lambda c: c.num_votes >= self.config['number_of_responses'])
 
-        self.claims = aggregated_claims | as_list
+        self.claims = aggregated_claims\
+               | groupby(lambda c: c.subject_id)\
+               | select(lambda (_, claims): self._choose_claim_for_subject(claims))\
+               | where(lambda c: c is not None)\
+               | as_list
 
     def push(self):
         pushed_claims = 0
