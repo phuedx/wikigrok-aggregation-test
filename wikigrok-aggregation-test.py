@@ -74,6 +74,8 @@ class Aggregator():
         repo = site.data_repository()
         album_id = 'Q482994'  # album
 
+        changes = []
+        removes = []
         for claim in self.claims[self.config['offset']:max_claims]:
             subject_id = claim['claim']['event_subjectId']
             property_id = claim['claim']['event_propertyId']
@@ -95,6 +97,7 @@ class Aggregator():
                         site, property_id, datatype='wikibase-item')
                     claim_to_remove_item = pywikibot.ItemPage(repo, album_id)
                     claim_to_remove.setTarget(claim_to_remove_item)
+                    removes.append((subject_id, property_id, album_id))
                     # TODO: enable the next line if you want to remove 'album' claim
                     # item.removeClaims([claim_to_remove])
 
@@ -103,12 +106,19 @@ class Aggregator():
                         site, property_id, datatype='wikibase-item')
                     new_claim_item = pywikibot.ItemPage(repo, value_id)
                     new_claim.setTarget(new_claim_item)
+                    changes.append((subject_id, property_id, value_id))
                     # TODO: enable the next line if you want to push data to wikidata
                     # item.addClaim(new_claim)
                     pushed_claims += 1
 
         print('# of qualified claims: %d' % (max_claims - self.config['offset']))
         print('# of pushed claims: %d' % pushed_claims)
+        print('REMOVES')
+        for r in removes:
+            print('%s -> %s = %s' % (r[0], r[1], r[2]))
+        print('CHANGES')
+        for r in changes:
+            print('%s -> %s = %s' % (r[0], r[1], r[2]))
 
 if __name__ == '__main__':
     a = Aggregator()
