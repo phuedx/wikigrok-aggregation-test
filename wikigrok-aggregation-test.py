@@ -77,9 +77,9 @@ class Aggregator():
         repo = site.data_repository()
         album_id = 'Q482994'  # album
 
-        wikidata = pywikibot.ItemPage(repo, 'Q19801256')
+        wikigrok = pywikibot.ItemPage(repo, 'Q19801256')
         imported_from = pywikibot.Claim(repo, 'P143')
-        imported_from.setTarget(wikidata)
+        imported_from.setTarget(wikigrok)
 
         for claim in self.claims[self.config['offset']:max_claims]:
             subject_id = claim.subject_id
