@@ -99,7 +99,7 @@ class Aggregator():
                 if property_id == 'P31' and\
                         value_id in ('Q208569', 'Q209939') and album_id in claim_items:
                     claim_to_remove = pywikibot.Claim(
-                        site, property_id, datatype='wikibase-item')
+                        repo, property_id, datatype='wikibase-item')
                     claim_to_remove_item = pywikibot.ItemPage(repo, album_id)
                     claim_to_remove.setTarget(claim_to_remove_item)
                     # TODO: enable the next line if you want to remove 'album' claim
@@ -107,7 +107,7 @@ class Aggregator():
 
                 if property_id not in item.claims or value_id not in claim_items:
                     new_claim = pywikibot.Claim(
-                        site, property_id, datatype='wikibase-item')
+                        repo, property_id, datatype='wikibase-item')
                     new_claim_item = pywikibot.ItemPage(repo, value_id)
                     new_claim.setTarget(new_claim_item)
                     new_claim.addSource(imported_from)
