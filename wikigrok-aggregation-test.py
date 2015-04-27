@@ -21,7 +21,7 @@ class Aggregator():
     def load_config(self, config_path):
         """Load config"""
         with open(config_path) as config_file:
-            self.config.update(yaml.load(config_file))
+            self.config.update(yaml.safe_load(config_file))
 
     def _get_claims(self):
         raw_events = open('claims.tsv', 'r')
